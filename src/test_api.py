@@ -1,6 +1,7 @@
 import requests
 import pytest
-from utils.utils import generate_random_email, generate_random_name, get_random_gender, get_random_status
+from utils.random_generator import generate_random_email, generate_random_name, get_random_gender, get_random_status
+from utils.logger_validator import log_and_assert, log_response_data, log_request_data
 from dotenv import load_dotenv
 import os
 
@@ -13,7 +14,6 @@ headers = {
     "Content-Type": "application/json"
 }
 
-
 @pytest.fixture
 def create_user():
     """Fixture to create a new user for positive test cases."""
@@ -22,42 +22,76 @@ def create_user():
     gender = get_random_gender()
     status = get_random_status()
     
-    response = requests.post(f"{BASE_URL}/users", json={
+    request_data = {
         "name": name,
         "email": email,
         "gender": gender,
         "status": status
-    }, headers=headers)
+    }    
+
+    log_request_data(request_data, step_name="Create User Request Body")
+   
+    response = requests.post(f"{BASE_URL}/users", json=request_data, headers=headers)
+   
+    log_response_data(response, step_name="Create User Response")
     
     return response
 
 def test_create_user_positive(create_user):
     """Test case for creating a new user - positive case."""
-    response_json = create_user.json()
-    
-    assert create_user.status_code == 200, "Expected status code 200 for successful user creation."
-    assert response_json["code"] == 201, "Expected 'code' in response to be 201."
-    assert response_json["meta"] is None, "Expected 'meta' to be None."
-    
+    response = create_user
+    response_json = response.json()
+
+    expected_status_code = 200
+    expected_values = {
+        "code": 201,
+        "meta": None,
+        "data": {
+            "id": response_json["data"]["id"],
+            "name": response_json["data"]["name"],
+            "email": response_json["data"]["email"],
+            "gender": response_json["data"]["gender"],
+            "status": response_json["data"]["status"],
+        }
+    }
+
+    print(response_json)
+
+
+    log_and_assert(response, expected_status_code, expected_values)
+
+    # Additional assertions for specific fields
     data = response_json["data"]
     assert "id" in data, "Expected 'id' in response data."
-    assert data["name"] is not None, "Expected 'name' in response data."
-    assert data["email"] is not None, "Expected 'email' in response data."
+    assert data["name"] is not None, "Expected 'name' to be present in response data."
+    assert data["email"] is not None, "Expected 'email' to be present in response data."
     assert data["gender"] in ["male", "female"], "Expected 'gender' to be either 'male' or 'female'."
     assert data["status"] in ["active", "inactive"], "Expected 'status' to be either 'active' or 'inactive'."
 
 def test_get_user_details(create_user):
     """Test case for getting user details."""
-    user_id = create_user.json()["data"]["id"]
-    response = requests.get(f"{BASE_URL}/users/{user_id}", headers=headers)
-    response_json = response.json()
+    user_detail = create_user.json()
+    log_request_data({"user_id": user_detail['data']['id']}, step_name="Get User Details")
 
-    assert response.status_code == 200, "Expected status code 200 for successful retrieval of user details."
-    assert response_json["code"] == 200, "Expected 'code' in response to be 200."
-    assert response_json["meta"] is None, "Expected 'meta' to be None."
+    response = requests.get(f"{BASE_URL}/users/{user_detail['data']['id']}", headers=headers)
+   
+    log_response_data(response, step_name="Get User Details")
+
+    expected_status_code = 200
+    expected_values = {
+        "code": 200,
+        "meta": None,
+        "data": user_detail['data']
+    }
+
+    log_and_assert(response, expected_status_code, expected_values)
     
-    data = response_json["data"]
-    assert data["id"] == user_id, "User ID in response should match the requested ID."
+    data = response.json()["data"]
+    assert data["name"] is not None, "Expected 'name' to be present in response data."
+    assert data["email"] is not None, "Expected 'email' to be present in response data."
+    assert data["gender"] in ["male", "female"], "Expected 'gender' to be either 'male' or 'female'."
+    assert data["status"] in ["active", "inactive"], "Expected 'status' to be either 'active' or 'inactive'."
+
 
 def test_get_user_details_non_existent():
     """Test case for getting details of a non-existent user."""
@@ -65,28 +99,59 @@ def test_get_user_details_non_existent():
     response = requests.get(f"{BASE_URL}/users/{non_existent_user_id}", headers=headers)
     response_json = response.json()
 
-    assert response.status_code == 200, "Expected status still 200 even if trying to get non-existent user's detail."
-    assert response_json["code"] == 404, "Expected 'code' in response to be 404 for non-existent user."
+    expected_status_code = 200
+    expected_values = {
+        "code": 404,
+        "meta": None,
+        "data": {
+            "message": "Resource not found"
+        }
+    }
+
+    log_and_assert(response, expected_status_code, expected_values)
 
 def test_update_user_invalid_gender(create_user):
     """Test case for updating user details with an invalid gender."""
     user_id = create_user.json()["data"]["id"]
     update_fields_invalid = {"gender": "not_a_gender"}
+
+    log_request_data(update_fields_invalid, step_name="Update with Invalid Gender Input")
     
     response = requests.put(f"{BASE_URL}/users/{user_id}", json=update_fields_invalid, headers=headers)
-    response_json = response.json()
     
-    assert response.status_code == 200, "Expected status code 422 even if the gender is not valid."
-    assert response_json["code"] == 422, "Expected 'code' in response to be 422 because the gender is not in valid form."
+    log_response_data(response, step_name="Update with Invalid Gender Input")
+
+    expected_status_code=200
+    expected_values = {
+        "code": 422,
+        "meta": None,
+        "data": [
+            {
+            "field": "gender",
+            "message": "can't be blank, can be male of female"
+            }
+        ]
+    }
+
+    log_and_assert(response, expected_status_code, expected_values)
 
 def test_delete_user(create_user):
     """Test case for deleting a user."""
     user_id = create_user.json()["data"]["id"]
+
     response = requests.delete(f"{BASE_URL}/users/{user_id}", headers=headers)
     response_json = response.json()
+
+    log_response_data(response, step_name="Delete A Valid User")
     
-    assert response.status_code == 200, "Expected status code 200 for successful deletion."
-    assert response_json["code"] == 204, "Expected 'code' in response to be 204 because a user is successfully deleted."
+    expected_status_code=200
+    expected_values = {
+        "code": 204,
+        "meta": None,
+        "data": None
+    }
+
+    log_and_assert(response, expected_status_code, expected_values)
 
 
 def test_delete_user_non_existent():
@@ -94,6 +159,16 @@ def test_delete_user_non_existent():
     non_existent_user_id = 999999
     response = requests.delete(f"{BASE_URL}/users/{non_existent_user_id}", headers=headers)
     response_json = response.json()
+
+    log_response_data(response, step_name="Delete Invalid User")
     
-    assert response.status_code == 200, "Expected status code 200 even if trying to delete a non-existent user."
-    assert response_json["code"] == 404, "Expected 'code' in response to be 404 because the user doesn't exist."
+    expected_status_code=200
+    expected_values = {
+        "code": 404,
+        "meta": None,
+        "data": {
+            "message": "Resource not found"
+        }
+    }
+
+    log_and_assert(response, expected_status_code, expected_values)
