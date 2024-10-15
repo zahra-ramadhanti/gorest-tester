@@ -33,7 +33,7 @@ def test_create_user():
 
 
 def test_get_user_detail():
-    user_id = 7472741
+    user_id = 7472742
     response = requests.get(f"{BASE_URL}/users/{user_id}", headers=headers)
     assert response.status_code == 200, f"Expected status code 200, but got {response.status_code}"
 
@@ -44,3 +44,17 @@ def test_get_user_detail():
     assert json_data['data']['email'] == "zzz.johnson@example.com", "Email does not match"
     assert json_data['data']['gender'] == "male", "Gender does not match"
     assert json_data['data']['status'] == "active", "Status does not match"
+
+def test_update_user_detail():
+    user_id = 7472742
+    payload = {
+        "name": "zzz New Johnson",
+    }
+    response = requests.patch(f"{BASE_URL}/users/{user_id}", json=payload, headers=headers)
+    assert response.status_code == 200, f"Expected status code 200, but got {response.status_code} insted"
+    
+    json_data = response.json()
+    print(json_data)
+    assert 'data' in json_data, "Response does not contain 'data' key"
+    print('created user id: ',json_data['data']['id'])
+    assert json_data['data']['name'] == payload['name'], "User name does not match"
