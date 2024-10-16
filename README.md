@@ -11,7 +11,7 @@ This project is designed to perform automated testing on the Gorest API using Py
 - [Tests Description](#tests-description)
 - [Setup](#setup)
 - [Running Tests](#running-tests)
-- [Viewing Test Reports](#viewing-test-reports)`
+- [Viewing Test Reports](#viewing-test-reports)
 
 ## Tests Description
 The tests cover the following functionalities:
@@ -63,6 +63,28 @@ get the token, and replace your API_TOKEN in the .env file
 API_TOKEN=your_api_token_here
 ```
 
+Install allure for reporting purposes in your local device:
+
+- For macOS (using Homebrew)
+    ```bash
+    brew install allure
+    ```
+
+- For Linux:
+    ```bash
+    sudo apt install allure
+    ```
+
+- For Windows:
+  - Download the latest Allure Commandline zip from the Allure Releases page : [Allure Installation](https://github.com/allure-framework/allure2/releases)
+  - Unzip the downloaded file and add the bin directory to your system's PATH environment variable.
+
+After installing Allure, you can verify that it’s installed correctly by running:
+```bash`
+allure --version
+```
+This command should display the installed version of Allure.
+
 ## Running Tests
 Make sure you already have allure installed on your device, and run
 ```bash
@@ -73,9 +95,7 @@ pytest --cov=src --cov-report=term-missing --html=report.html --alluredir=allure
 After running the tests, an HTML report will be generated as report.html in your project directory. You can open this file in your web browser to view the detailed test results.
 
 Viewing Allure Reports
-To view the Allure report, you need to have Allure installed. You can install it by following the instructions on the Allure installation page.
-
-Once Allure is installed, you can serve the report with the following command
+To view the Allure report, you need to have Allure installed. Once Allure is surely installed, you can serve the report with the following command
 ```bash
 allure serve allure-results
 ```
