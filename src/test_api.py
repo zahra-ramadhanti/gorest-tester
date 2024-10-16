@@ -58,7 +58,6 @@ def test_create_user_positive(create_user):
 
     log_and_assert(response, expected_status_code, expected_values)
 
-    # Additional assertions for specific fields
     data = response_json["data"]
     assert "id" in data, "Expected 'id' in response data."
     assert data["name"] is not None, "Expected 'name' to be present in response data."
@@ -66,9 +65,8 @@ def test_create_user_positive(create_user):
     assert data["gender"] in ["male", "female"], "Expected 'gender' to be either 'male' or 'female'."
     assert data["status"] in ["active", "inactive"], "Expected 'status' to be either 'active' or 'inactive'."
 
-def test_create_user_invalid_json():
-    """Test case for creating a user - negative case with invalid JSON syntax."""
-    step_name = "Create User - Already Existed Email"
+def test_create_user_already_taken_email():
+    step_name = "Create User - Already Taken Email"
 
     request_data = {
         "email": "7Z96utZH@example.com",
@@ -99,7 +97,6 @@ def test_create_user_invalid_json():
 
 
 def test_get_user_details_positive(create_user):
-    """Test case for getting user details - positive case"""
     step_name = "Get User Details - Positive"
     user_detail = create_user.json()
     log_request_data({"user_id": user_detail['data']['id']}, step_name)
@@ -125,9 +122,8 @@ def test_get_user_details_positive(create_user):
 
 
 def test_get_user_details_non_existent():
-    """Test case for getting details of a non-existent user."""
     step_name = "Get User Detail - Non-existent User"
-    non_existent_user_id = 999999  # Assuming this user ID does not exist
+    non_existent_user_id = 999999  # Non-existent User ID
     response = requests.get(f"{BASE_URL}/users/{non_existent_user_id}", headers=headers)
     response_json = response.json()
 
@@ -142,16 +138,17 @@ def test_get_user_details_non_existent():
 
     log_and_assert(response, expected_status_code, expected_values)
 
-def test_update_user_invalid_gender(create_user):
-    """Test case for updating user details with an invalid gender."""
+def test_update_user_already_taken_email(create_user):
+    """Test case for updating user details with an already taken email"""
+    step_name = "Update User Detail - Already Taken Email"
     user_id = create_user.json()["data"]["id"]
-    update_fields_invalid = {"gender": "not_a_gender"}
+    update_field_invalid = {"email": "rAQUSqb5@example.com"} # Already Taken Email
 
-    log_request_data(update_fields_invalid, step_name="Update with Invalid Gender Input")
-    
-    response = requests.put(f"{BASE_URL}/users/{user_id}", json=update_fields_invalid, headers=headers)
-    
-    log_response_data(response, step_name="Update with Invalid Gender Input")
+    log_request_data(update_field_invalid, step_name)
+
+    response = requests.put(f"{BASE_URL}/users/{user_id}", json=update_field_invalid, headers=headers)
+
+    log_response_data(response, step_name)
 
     expected_status_code=200
     expected_values = {
@@ -159,22 +156,57 @@ def test_update_user_invalid_gender(create_user):
         "meta": None,
         "data": [
             {
-            "field": "gender",
-            "message": "can't be blank, can be male of female"
+            "field": "email",
+            "message": "has already been taken"
             }
         ]
     }
 
     log_and_assert(response, expected_status_code, expected_values)
 
-def test_delete_user(create_user):
-    """Test case for deleting a user."""
+def test_update_user_invalid_gender_and_status(create_user):
+    step_name = "Update User - Invalid Gender and Status"
     user_id = create_user.json()["data"]["id"]
+    update_fields_invalid = {
+        "gender": "not_a_gender",
+        "status": "not_a_status"
+    }
+
+    log_request_data(update_fields_invalid, step_name)
+    
+    response = requests.put(f"{BASE_URL}/users/{user_id}", json=update_fields_invalid, headers=headers)
+    
+    log_response_data(response, step_name)
+
+    expected_status_code = 200
+    expected_values = {
+        "code": 422,
+        "meta": None,
+        "data": [
+            {
+                "field": "gender",
+                "message": "can't be blank, can be male of female"
+            },
+            {
+                "field": "status",
+                "message": "can't be blank"
+            }
+        ]
+    }
+
+    log_and_assert(response, expected_status_code, expected_values)
+
+
+def test_delete_user_postive(create_user):
+    step_name = "Delete User - Positive"
+    user_id = create_user.json()["data"]["id"]
+
+    log_request_data(user_id, step_name)
 
     response = requests.delete(f"{BASE_URL}/users/{user_id}", headers=headers)
     response_json = response.json()
 
-    log_response_data(response, step_name="Delete A Valid User")
+    log_response_data(response, step_name)
     
     expected_status_code=200
     expected_values = {
@@ -188,11 +220,16 @@ def test_delete_user(create_user):
 
 def test_delete_user_non_existent():
     """Test case for deleting a non-existent user."""
-    non_existent_user_id = 999999
+    step_name = "Delet User - Non-existent User"
+
+    non_existent_user_id = 999999 # Non-exitend User ID
+
+    log_request_data(non_existent_user_id, step_name)
+
     response = requests.delete(f"{BASE_URL}/users/{non_existent_user_id}", headers=headers)
     response_json = response.json()
 
-    log_response_data(response, step_name="Delete Invalid User")
+    log_response_data(response, step_name)
     
     expected_status_code=200
     expected_values = {
