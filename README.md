@@ -80,7 +80,7 @@ Install allure for reporting purposes in your local device:
   - Unzip the downloaded file and add the bin directory to your system's PATH environment variable.
 
 After installing Allure, you can verify that it’s installed correctly by running:
-```bash`
+```bash
 allure --version
 ```
 This command should display the installed version of Allure.

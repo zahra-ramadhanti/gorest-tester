@@ -1,1 +1,0 @@
-{'code': 422, 'meta': None, 'data': [{'field': 'email', 'message': 'has already been taken'}]}

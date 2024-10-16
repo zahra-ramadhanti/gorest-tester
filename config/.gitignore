@@ -1,0 +1,4 @@
+.env
+.coverage
+pytest.ini
+src/__pycache__

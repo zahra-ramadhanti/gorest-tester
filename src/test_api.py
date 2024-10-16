@@ -5,7 +5,7 @@ from utils.logger_validator import log_and_assert, log_response_data, log_reques
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '../config/.env'))
 
 TOKEN = os.getenv('API_TOKEN')
 BASE_URL = "https://gorest.co.in/public-api"
