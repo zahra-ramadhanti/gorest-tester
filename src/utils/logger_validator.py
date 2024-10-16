@@ -2,12 +2,12 @@ import allure
 
 def log_request_data(data, step_name="Request Body"):
     """Log request data with Allure."""
-    with allure.step(f"Logging {step_name}"):
+    with allure.step(f"Request for {step_name}"):
         allure.attach(str(data), name=step_name, attachment_type=allure.attachment_type.JSON)
 
 def log_response_data(response, step_name="Response"):
     """Log response data with Allure."""
-    with allure.step(f"Logging {step_name}"):
+    with allure.step(f"Response for {step_name}"):
         allure.attach(str(response.json()), name=step_name, attachment_type=allure.attachment_type.JSON)
 
 def log_and_assert(response, expected_status, expected_values):

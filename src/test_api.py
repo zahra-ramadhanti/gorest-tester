@@ -17,6 +17,7 @@ headers = {
 @pytest.fixture
 def create_user():
     """Fixture to create a new user for positive test cases."""
+    step_name = "Create User - Positive"
     name = generate_random_name()
     email = generate_random_email()
     gender = get_random_gender()
@@ -29,11 +30,11 @@ def create_user():
         "status": status
     }    
 
-    log_request_data(request_data, step_name="Create User Request Body")
+    log_request_data(request_data, step_name)
    
     response = requests.post(f"{BASE_URL}/users", json=request_data, headers=headers)
    
-    log_response_data(response, step_name="Create User Response")
+    log_response_data(response, step_name)
     
     return response
 
@@ -55,9 +56,6 @@ def test_create_user_positive(create_user):
         }
     }
 
-    print(response_json)
-
-
     log_and_assert(response, expected_status_code, expected_values)
 
     # Additional assertions for specific fields
@@ -68,14 +66,47 @@ def test_create_user_positive(create_user):
     assert data["gender"] in ["male", "female"], "Expected 'gender' to be either 'male' or 'female'."
     assert data["status"] in ["active", "inactive"], "Expected 'status' to be either 'active' or 'inactive'."
 
-def test_get_user_details(create_user):
-    """Test case for getting user details."""
+def test_create_user_invalid_json():
+    """Test case for creating a user - negative case with invalid JSON syntax."""
+    step_name = "Create User - Already Existed Email"
+
+    request_data = {
+        "email": "7Z96utZH@example.com",
+        "name": "7Z96utZH",
+        "gender": "male",
+        "status": "inactive",
+    }
+
+    log_request_data(request_data, step_name)
+   
+    response = requests.post(f"{BASE_URL}/users", json=request_data, headers=headers)
+   
+    log_response_data(response, step_name)
+
+    expected_status_code = 200
+    expected_values = {
+        "code": 422,
+        "meta": None,
+        "data": [
+            {
+                "field": "email",
+                "message": "has already been taken"
+            }
+        ] 
+    }
+
+    log_and_assert(response, expected_status_code, expected_values)
+
+
+def test_get_user_details_positive(create_user):
+    """Test case for getting user details - positive case"""
+    step_name = "Get User Details - Positive"
     user_detail = create_user.json()
-    log_request_data({"user_id": user_detail['data']['id']}, step_name="Get User Details")
+    log_request_data({"user_id": user_detail['data']['id']}, step_name)
 
     response = requests.get(f"{BASE_URL}/users/{user_detail['data']['id']}", headers=headers)
    
-    log_response_data(response, step_name="Get User Details")
+    log_response_data(response, step_name)
 
     expected_status_code = 200
     expected_values = {
@@ -95,6 +126,7 @@ def test_get_user_details(create_user):
 
 def test_get_user_details_non_existent():
     """Test case for getting details of a non-existent user."""
+    step_name = "Get User Detail - Non-existent User"
     non_existent_user_id = 999999  # Assuming this user ID does not exist
     response = requests.get(f"{BASE_URL}/users/{non_existent_user_id}", headers=headers)
     response_json = response.json()
